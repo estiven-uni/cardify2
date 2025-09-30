@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardify - Convertidor de Carnets a PDF</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            transition: all 0.3s ease;
+        }
+        .upload-area:hover {
+            border-color: #4299e1;
+            background-color: #f7fafc;
+        }
+        .upload-area.dragover {
+            border-color: #3182ce;
+            background-color: #ebf8ff;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Cardify</h1>
+            <p class="text-gray-600">Convierte tu carnet a PDF en formato A4</p>
+        </div>
+
+        <!-- Main Content -->
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <!-- Upload Section -->
+                <div class="grid md:grid-cols-2 gap-6 mb-8">
+                    <!-- Frente del Carnet -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-700">Frente del Carnet</h3>
+                        <div class="upload-area rounded-lg p-6 text-center cursor-pointer" 
+                             id="frente-upload" 
+                             onclick="document.getElementById('frente-input').click()">
+                            <div id="frente-preview" class="hidden">
+                                <img id="frente-img" class="max-w-full h-48 object-contain mx-auto rounded border" alt="Frente del carnet">
+                                <p class="text-sm text-gray-500 mt-2">Haz clic para cambiar</p>
+                            </div>
+                            <div id="frente-placeholder">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-600">Haz clic para subir el frente</p>
+                                <p class="text-xs text-gray-400">o arrastra y suelta aquí</p>
+                            </div>
+                        </div>
+                        <input type="file" id="frente-input" class="hidden" accept="image/*">
+                    </div>
+
+                    <!-- Dorso del Carnet -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-700">Dorso del Carnet</h3>
+                        <div class="upload-area rounded-lg p-6 text-center cursor-pointer" 
+                             id="dorso-upload" 
+                             onclick="document.getElementById('dorso-input').click()">
+                            <div id="dorso-preview" class="hidden">
+                                <img id="dorso-img" class="max-w-full h-48 object-contain mx-auto rounded border" alt="Dorso del carnet">
+                                <p class="text-sm text-gray-500 mt-2">Haz clic para cambiar</p>
+                            </div>
+                            <div id="dorso-placeholder">
+                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                                <p class="mt-2 text-sm text-gray-600">Haz clic para subir el dorso</p>
+                                <p class="text-xs text-gray-400">o arrastra y suelta aquí</p>
+                            </div>
+                        </div>
+                        <input type="file" id="dorso-input" class="hidden" accept="image/*">
+                    </div>
+                </div>
+
+                <!-- Convert Button -->
+                <div class="text-center">
+                    <button id="convert-btn" 
+                            class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-8 rounded-lg transition duration-200 flex items-center mx-auto"
+                            disabled>
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Convertir a PDF
+                    </button>
+                </div>
+
+                <!-- Status Message -->
+                <div id="status-message" class="mt-4 text-center hidden">
+                    <p id="status-text" class="text-sm"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

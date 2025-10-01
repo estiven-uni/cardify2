@@ -17,6 +17,18 @@ const convertBtn = document.getElementById('convert-btn');
 const statusMessage = document.getElementById('status-message');
 const statusText = document.getElementById('status-text');
 
+// Controles de ajuste
+const frenteScale = document.getElementById('frente-scale');
+const frenteX = document.getElementById('frente-x');
+const frenteY = document.getElementById('frente-y');
+const dorsoScale = document.getElementById('dorso-scale');
+const dorsoX = document.getElementById('dorso-x');
+const dorsoY = document.getElementById('dorso-y');
+const resetControlsBtn = document.getElementById('reset-controls-btn');
+
+// Loader
+const loaderOverlay = document.getElementById('loader-overlay');
+
 // Inicialización
 document.addEventListener('DOMContentLoaded', function() {
     setupEventListeners();
@@ -33,6 +45,58 @@ function setupEventListeners() {
 
     // Event listener para el botón de conversión
     convertBtn.addEventListener('click', convertToPDF);
+
+    // Event listeners para controles de ajuste
+    setupControlListeners();
+    
+    // Event listener para botón de reiniciar
+    resetControlsBtn.addEventListener('click', resetControls);
+}
+
+function setupControlListeners() {
+    // Frente
+    frenteScale.addEventListener('input', (e) => {
+        document.getElementById('frente-scale-value').textContent = e.target.value + '%';
+    });
+    
+    frenteX.addEventListener('input', (e) => {
+        document.getElementById('frente-x-value').textContent = e.target.value + 'mm';
+    });
+    
+    frenteY.addEventListener('input', (e) => {
+        document.getElementById('frente-y-value').textContent = e.target.value + 'mm';
+    });
+    
+    // Dorso
+    dorsoScale.addEventListener('input', (e) => {
+        document.getElementById('dorso-scale-value').textContent = e.target.value + '%';
+    });
+    
+    dorsoX.addEventListener('input', (e) => {
+        document.getElementById('dorso-x-value').textContent = e.target.value + 'mm';
+    });
+    
+    dorsoY.addEventListener('input', (e) => {
+        document.getElementById('dorso-y-value').textContent = e.target.value + 'mm';
+    });
+}
+
+function resetControls() {
+    // Reiniciar valores a los valores por defecto
+    frenteScale.value = 70;
+    frenteX.value = 0;
+    frenteY.value = 20;
+    dorsoScale.value = 70;
+    dorsoX.value = 0;
+    dorsoY.value = -20;
+    
+    // Actualizar displays
+    document.getElementById('frente-scale-value').textContent = '70%';
+    document.getElementById('frente-x-value').textContent = '0mm';
+    document.getElementById('frente-y-value').textContent = '20mm';
+    document.getElementById('dorso-scale-value').textContent = '70%';
+    document.getElementById('dorso-x-value').textContent = '0mm';
+    document.getElementById('dorso-y-value').textContent = '-20mm';
 }
 
 function setupDragAndDrop(type) {
@@ -125,16 +189,58 @@ function hideStatus() {
     statusMessage.classList.add('hidden');
 }
 
+function showLoader() {
+    loaderOverlay.classList.remove('hidden');
+}
+
+function hideLoader() {
+    loaderOverlay.classList.add('hidden');
+}
+
+// Función para crear una imagen con esquinas redondeadas
+function createRoundedImage(img, borderRadius = 20) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Establecer el tamaño del canvas igual al de la imagen
+    canvas.width = img.width;
+    canvas.height = img.height;
+    
+    // Crear el path con esquinas redondeadas
+    ctx.beginPath();
+    ctx.moveTo(borderRadius, 0);
+    ctx.lineTo(canvas.width - borderRadius, 0);
+    ctx.quadraticCurveTo(canvas.width, 0, canvas.width, borderRadius);
+    ctx.lineTo(canvas.width, canvas.height - borderRadius);
+    ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - borderRadius, canvas.height);
+    ctx.lineTo(borderRadius, canvas.height);
+    ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - borderRadius);
+    ctx.lineTo(0, borderRadius);
+    ctx.quadraticCurveTo(0, 0, borderRadius, 0);
+    ctx.closePath();
+    
+    // Recortar y dibujar la imagen
+    ctx.clip();
+    ctx.drawImage(img, 0, 0, img.width, img.height);
+    
+    // Retornar la imagen como base64
+    return canvas.toDataURL('image/png');
+}
+
 function convertToPDF() {
     if (!frenteImage || !dorsoImage) {
         showStatus('Por favor sube ambas imágenes antes de convertir', 'error');
         return;
     }
 
-    showStatus('Generando PDF...', 'info');
+    // Mostrar loader y deshabilitar botón
+    showLoader();
     convertBtn.disabled = true;
+    hideStatus();
 
-    try {
+    // Usar setTimeout para permitir que el DOM se actualice antes del proceso pesado
+    setTimeout(() => {
+        try {
         // Crear nuevo documento PDF en formato A4 (210 x 297 mm)
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({
@@ -161,19 +267,35 @@ function convertToPDF() {
             };
         }
 
-        // Procesar imagen del frente
-        const frenteSize = resizeImageToFit(frenteImage, contentWidth, imageHeight);
-        const frenteX = margin + (contentWidth - frenteSize.width) / 2;
-        const frenteY = margin;
+        // Obtener valores de los controles
+        const frenteScaleValue = parseFloat(frenteScale.value) / 100;
+        const frenteXOffset = parseFloat(frenteX.value);
+        const frenteYOffset = parseFloat(frenteY.value);
+        const dorsoScaleValue = parseFloat(dorsoScale.value) / 100;
+        const dorsoXOffset = parseFloat(dorsoX.value);
+        const dorsoYOffset = parseFloat(dorsoY.value);
 
-        // Procesar imagen del dorso
-        const dorsoSize = resizeImageToFit(dorsoImage, contentWidth, imageHeight);
-        const dorsoX = margin + (contentWidth - dorsoSize.width) / 2;
-        const dorsoY = margin + imageHeight + margin;
+        // Crear imágenes con esquinas redondeadas
+        const frenteRounded = createRoundedImage(frenteImage, 70);
+        const dorsoRounded = createRoundedImage(dorsoImage, 70);
 
-        // Agregar imágenes al PDF
-        pdf.addImage(frenteImage, 'JPEG', frenteX, frenteY, frenteSize.width, frenteSize.height);
-        pdf.addImage(dorsoImage, 'JPEG', dorsoX, dorsoY, dorsoSize.width, dorsoSize.height);
+        // Procesar imagen del frente con escala personalizada
+        let frenteSize = resizeImageToFit(frenteImage, contentWidth, imageHeight);
+        frenteSize.width *= frenteScaleValue;
+        frenteSize.height *= frenteScaleValue;
+        const frenteXPos = margin + (contentWidth - frenteSize.width) / 2 + frenteXOffset;
+        const frenteYPos = margin + frenteYOffset;
+
+        // Procesar imagen del dorso con escala personalizada
+        let dorsoSize = resizeImageToFit(dorsoImage, contentWidth, imageHeight);
+        dorsoSize.width *= dorsoScaleValue;
+        dorsoSize.height *= dorsoScaleValue;
+        const dorsoXPos = margin + (contentWidth - dorsoSize.width) / 2 + dorsoXOffset;
+        const dorsoYPos = margin + imageHeight + margin + dorsoYOffset;
+
+        // Agregar imágenes con esquinas redondeadas al PDF
+        pdf.addImage(frenteRounded, 'PNG', frenteXPos, frenteYPos, frenteSize.width, frenteSize.height);
+        pdf.addImage(dorsoRounded, 'PNG', dorsoXPos, dorsoYPos, dorsoSize.width, dorsoSize.height);
 
         // Generar nombre de archivo con timestamp
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
@@ -182,14 +304,18 @@ function convertToPDF() {
         // Descargar el PDF
         pdf.save(filename);
         
+        // Ocultar loader y mostrar mensaje de éxito
+        hideLoader();
         showStatus('¡PDF generado y descargado exitosamente!', 'success');
         
-    } catch (error) {
-        console.error('Error al generar PDF:', error);
-        showStatus('Error al generar el PDF. Inténtalo de nuevo.', 'error');
-    } finally {
-        convertBtn.disabled = false;
-    }
+        } catch (error) {
+            console.error('Error al generar PDF:', error);
+            hideLoader();
+            showStatus('Error al generar el PDF. Inténtalo de nuevo.', 'error');
+        } finally {
+            convertBtn.disabled = false;
+        }
+    }, 100); // Pequeño delay para actualizar el DOM
 }
 
 // Función para limpiar las imágenes (opcional)

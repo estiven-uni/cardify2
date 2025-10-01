@@ -114,6 +114,48 @@
                     </div>
                 </div>
 
+                <!-- Opciones de Exportación -->
+                <div class="border-t pt-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Opciones de Exportación</h3>
+                    
+                    <div class="grid md:grid-cols-2 gap-6 mb-6">
+                        <!-- Formato de Salida -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Formato de Salida</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="format" value="pdf" checked class="mr-2 text-blue-600">
+                                    <span class="text-sm text-gray-700">PDF (Recomendado)</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="format" value="jpg" class="mr-2 text-blue-600">
+                                    <span class="text-sm text-gray-700">JPG (Imagen única)</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="format" value="png" class="mr-2 text-blue-600">
+                                    <span class="text-sm text-gray-700">PNG (Imagen única)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Calidad de Salida -->
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <label class="block text-sm font-medium text-gray-700 mb-3">Calidad y Compresión</label>
+                            <div class="space-y-2">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="quality" value="normal" checked class="mr-2 text-blue-600">
+                                    <span class="text-sm text-gray-700">Alta calidad sin comprimir</span>
+                                </label>
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" name="quality" value="compressed" class="mr-2 text-blue-600">
+                                    <span class="text-sm text-gray-700">Optimizado (menor peso)</span>
+                                </label>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">💡 Optimizado reduce hasta 80% el tamaño manteniendo buena calidad</p>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Controles de Ajuste -->
                 <div class="border-t pt-6 mb-6">
                     <h3 class="text-lg font-semibold text-gray-700 mb-4">Ajustar Posición y Tamaño</h3>
@@ -185,7 +227,7 @@
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
-                        Convertir a PDF
+                        <span id="btn-text">Generar y Descargar</span>
                     </button>
                 </div>
 
@@ -201,7 +243,7 @@
     <div id="loader-overlay" class="loader-overlay hidden">
         <div class="loader-container">
             <div class="spinner"></div>
-            <p class="text-gray-700 font-semibold">Generando PDF...</p>
+            <p class="text-gray-700 font-semibold">Generando...</p>
             <p class="text-sm text-gray-500 mt-2">Por favor espera un momento</p>
         </div>
     </div>

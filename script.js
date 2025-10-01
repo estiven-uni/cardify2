@@ -197,34 +197,104 @@ function hideLoader() {
     loaderOverlay.classList.add('hidden');
 }
 
-// Función para crear una imagen con esquinas redondeadas
-function createRoundedImage(img, borderRadius = 20) {
+// Función para comprimir y redimensionar imagen
+function compressImage(img, maxWidth = 1200, maxHeight = 1600) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     
-    // Establecer el tamaño del canvas igual al de la imagen
+    // Calcular nuevas dimensiones manteniendo la proporción
+    let width = img.width;
+    let height = img.height;
+    
+    if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width = width * ratio;
+        height = height * ratio;
+    }
+    
+    canvas.width = width;
+    canvas.height = height;
+    
+    // Dibujar la imagen redimensionada
+    ctx.drawImage(img, 0, 0, width, height);
+    
+    return { canvas, width, height };
+}
+
+// Función para crear una imagen con esquinas redondeadas (SIN comprimir)
+function createRoundedImageHighQuality(img, borderRadius = 70) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
     canvas.width = img.width;
     canvas.height = img.height;
     
+    // Fondo blanco para consistencia
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Calcular el radio de borde - usar un porcentaje mayor para esquinas más visibles
+    const scaledBorderRadius = Math.min(borderRadius, img.width * 0.08, img.height * 0.08);
+    
     // Crear el path con esquinas redondeadas
     ctx.beginPath();
-    ctx.moveTo(borderRadius, 0);
-    ctx.lineTo(canvas.width - borderRadius, 0);
-    ctx.quadraticCurveTo(canvas.width, 0, canvas.width, borderRadius);
-    ctx.lineTo(canvas.width, canvas.height - borderRadius);
-    ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - borderRadius, canvas.height);
-    ctx.lineTo(borderRadius, canvas.height);
-    ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - borderRadius);
-    ctx.lineTo(0, borderRadius);
-    ctx.quadraticCurveTo(0, 0, borderRadius, 0);
+    ctx.moveTo(scaledBorderRadius, 0);
+    ctx.lineTo(canvas.width - scaledBorderRadius, 0);
+    ctx.quadraticCurveTo(canvas.width, 0, canvas.width, scaledBorderRadius);
+    ctx.lineTo(canvas.width, canvas.height - scaledBorderRadius);
+    ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - scaledBorderRadius, canvas.height);
+    ctx.lineTo(scaledBorderRadius, canvas.height);
+    ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - scaledBorderRadius);
+    ctx.lineTo(0, scaledBorderRadius);
+    ctx.quadraticCurveTo(0, 0, scaledBorderRadius, 0);
+    ctx.closePath();
+    
+    // Recortar y dibujar la imagen original sin comprimir
+    ctx.clip();
+    ctx.drawImage(img, 0, 0, img.width, img.height);
+    
+    // Retornar la imagen en PNG de alta calidad (sin pérdida)
+    return canvas.toDataURL('image/png', 1.0);
+}
+
+// Función para crear una imagen con esquinas redondeadas y comprimida
+function createRoundedImageCompressed(img, borderRadius = 70) {
+    // Primero comprimir la imagen
+    const { canvas: tempCanvas, width, height } = compressImage(img);
+    
+    // Crear nuevo canvas para las esquinas redondeadas
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = width;
+    canvas.height = height;
+    
+    // Fondo blanco (importante para JPEG que no soporta transparencia)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Calcular el radio de borde - usar un valor fijo más grande basado en el tamaño
+    const scaledBorderRadius = Math.min(borderRadius * (width / img.width), width * 0.08, height * 0.08);
+    
+    // Crear el path con esquinas redondeadas
+    ctx.beginPath();
+    ctx.moveTo(scaledBorderRadius, 0);
+    ctx.lineTo(canvas.width - scaledBorderRadius, 0);
+    ctx.quadraticCurveTo(canvas.width, 0, canvas.width, scaledBorderRadius);
+    ctx.lineTo(canvas.width, canvas.height - scaledBorderRadius);
+    ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - scaledBorderRadius, canvas.height);
+    ctx.lineTo(scaledBorderRadius, canvas.height);
+    ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - scaledBorderRadius);
+    ctx.lineTo(0, scaledBorderRadius);
+    ctx.quadraticCurveTo(0, 0, scaledBorderRadius, 0);
     ctx.closePath();
     
     // Recortar y dibujar la imagen
     ctx.clip();
-    ctx.drawImage(img, 0, 0, img.width, img.height);
+    ctx.drawImage(tempCanvas, 0, 0, width, height);
     
-    // Retornar la imagen como base64
-    return canvas.toDataURL('image/png');
+    // Retornar la imagen como JPEG comprimido (calidad 0.85 para balance entre calidad y tamaño)
+    return canvas.toDataURL('image/jpeg', 0.85);
 }
 
 function convertToPDF() {
@@ -232,6 +302,10 @@ function convertToPDF() {
         showStatus('Por favor sube ambas imágenes antes de convertir', 'error');
         return;
     }
+
+    // Obtener opciones seleccionadas
+    const format = document.querySelector('input[name="format"]:checked').value;
+    const quality = document.querySelector('input[name="quality"]:checked').value;
 
     // Mostrar loader y deshabilitar botón
     showLoader();
@@ -241,12 +315,34 @@ function convertToPDF() {
     // Usar setTimeout para permitir que el DOM se actualice antes del proceso pesado
     setTimeout(() => {
         try {
+            // Decidir qué formato exportar
+            if (format === 'pdf') {
+                exportToPDF(quality);
+            } else if (format === 'jpg') {
+                exportToImage('jpg', quality);
+            } else if (format === 'png') {
+                exportToImage('png', quality);
+            }
+        } catch (error) {
+            console.error('Error al generar archivo:', error);
+            hideLoader();
+            showStatus('Error al generar el archivo. Inténtalo de nuevo.', 'error');
+            convertBtn.disabled = false;
+        }
+    }, 100);
+}
+
+function exportToPDF(quality) {
+    try {
+        const isCompressed = quality === 'compressed';
+        
         // Crear nuevo documento PDF en formato A4 (210 x 297 mm)
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({
             orientation: 'portrait',
             unit: 'mm',
-            format: 'a4'
+            format: 'a4',
+            compress: isCompressed
         });
 
         // Dimensiones A4 en mm
@@ -275,9 +371,13 @@ function convertToPDF() {
         const dorsoXOffset = parseFloat(dorsoX.value);
         const dorsoYOffset = parseFloat(dorsoY.value);
 
-        // Crear imágenes con esquinas redondeadas
-        const frenteRounded = createRoundedImage(frenteImage, 70);
-        const dorsoRounded = createRoundedImage(dorsoImage, 70);
+        // Crear imágenes con esquinas redondeadas según calidad
+        const frenteRounded = isCompressed 
+            ? createRoundedImageCompressed(frenteImage, 70)
+            : createRoundedImageHighQuality(frenteImage, 70);
+        const dorsoRounded = isCompressed 
+            ? createRoundedImageCompressed(dorsoImage, 70)
+            : createRoundedImageHighQuality(dorsoImage, 70);
 
         // Procesar imagen del frente con escala personalizada
         let frenteSize = resizeImageToFit(frenteImage, contentWidth, imageHeight);
@@ -294,12 +394,14 @@ function convertToPDF() {
         const dorsoYPos = margin + imageHeight + margin + dorsoYOffset;
 
         // Agregar imágenes con esquinas redondeadas al PDF
-        pdf.addImage(frenteRounded, 'PNG', frenteXPos, frenteYPos, frenteSize.width, frenteSize.height);
-        pdf.addImage(dorsoRounded, 'PNG', dorsoXPos, dorsoYPos, dorsoSize.width, dorsoSize.height);
+        const imageFormat = isCompressed ? 'JPEG' : 'PNG';
+        pdf.addImage(frenteRounded, imageFormat, frenteXPos, frenteYPos, frenteSize.width, frenteSize.height);
+        pdf.addImage(dorsoRounded, imageFormat, dorsoXPos, dorsoYPos, dorsoSize.width, dorsoSize.height);
 
         // Generar nombre de archivo con timestamp
         const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const filename = `carnet_${timestamp}.pdf`;
+        const qualityLabel = isCompressed ? '_optimizado' : '_alta_calidad';
+        const filename = `carnet${qualityLabel}_${timestamp}.pdf`;
 
         // Descargar el PDF
         pdf.save(filename);
@@ -307,15 +409,111 @@ function convertToPDF() {
         // Ocultar loader y mostrar mensaje de éxito
         hideLoader();
         showStatus('¡PDF generado y descargado exitosamente!', 'success');
+        convertBtn.disabled = false;
         
-        } catch (error) {
-            console.error('Error al generar PDF:', error);
-            hideLoader();
-            showStatus('Error al generar el PDF. Inténtalo de nuevo.', 'error');
-        } finally {
-            convertBtn.disabled = false;
+    } catch (error) {
+        console.error('Error al generar PDF:', error);
+        hideLoader();
+        showStatus('Error al generar el PDF. Inténtalo de nuevo.', 'error');
+        convertBtn.disabled = false;
+    }
+}
+
+function exportToImage(format, quality) {
+    try {
+        const isCompressed = quality === 'compressed';
+        
+        // Obtener valores de los controles
+        const frenteScaleValue = parseFloat(frenteScale.value) / 100;
+        const frenteXOffset = parseFloat(frenteX.value) * 3.78; // Convertir mm a px aprox
+        const frenteYOffset = parseFloat(frenteY.value) * 3.78;
+        const dorsoScaleValue = parseFloat(dorsoScale.value) / 100;
+        const dorsoXOffset = parseFloat(dorsoX.value) * 3.78;
+        const dorsoYOffset = parseFloat(dorsoY.value) * 3.78;
+
+        // Crear canvas para la imagen combinada (A4 en píxeles: 794 x 1123)
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 794;
+        canvas.height = 1123;
+        
+        // Fondo blanco
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Crear imágenes con esquinas redondeadas según calidad
+        const frenteRounded = isCompressed 
+            ? createRoundedImageCompressed(frenteImage, 70)
+            : createRoundedImageHighQuality(frenteImage, 70);
+        const dorsoRounded = isCompressed 
+            ? createRoundedImageCompressed(dorsoImage, 70)
+            : createRoundedImageHighQuality(dorsoImage, 70);
+
+        // Cargar las imágenes procesadas
+        const frenteImgElement = new Image();
+        const dorsoImgElement = new Image();
+        
+        let loadedCount = 0;
+        
+        function checkBothLoaded() {
+            loadedCount++;
+            if (loadedCount === 2) {
+                // Calcular dimensiones y posiciones
+                const margin = 38; // 10mm en px
+                const contentWidth = canvas.width - (margin * 2);
+                const imageHeight = (canvas.height - (margin * 3)) / 2;
+                
+                // Frente
+                const frenteRatio = Math.min(contentWidth / frenteImgElement.width, imageHeight / frenteImgElement.height);
+                let frenteW = frenteImgElement.width * frenteRatio * frenteScaleValue;
+                let frenteH = frenteImgElement.height * frenteRatio * frenteScaleValue;
+                const frenteX = margin + (contentWidth - frenteW) / 2 + frenteXOffset;
+                const frenteY = margin + frenteYOffset;
+                
+                // Dorso
+                const dorsoRatio = Math.min(contentWidth / dorsoImgElement.width, imageHeight / dorsoImgElement.height);
+                let dorsoW = dorsoImgElement.width * dorsoRatio * dorsoScaleValue;
+                let dorsoH = dorsoImgElement.height * dorsoRatio * dorsoScaleValue;
+                const dorsoX = margin + (contentWidth - dorsoW) / 2 + dorsoXOffset;
+                const dorsoY = margin + imageHeight + margin + dorsoYOffset;
+                
+                // Dibujar en el canvas
+                ctx.drawImage(frenteImgElement, frenteX, frenteY, frenteW, frenteH);
+                ctx.drawImage(dorsoImgElement, dorsoX, dorsoY, dorsoW, dorsoH);
+                
+                // Descargar imagen
+                const mimeType = format === 'jpg' ? 'image/jpeg' : 'image/png';
+                const imageQuality = isCompressed ? 0.85 : 1.0;
+                const dataURL = canvas.toDataURL(mimeType, imageQuality);
+                
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+                const qualityLabel = isCompressed ? '_optimizado' : '_alta_calidad';
+                const filename = `carnet${qualityLabel}_${timestamp}.${format}`;
+                
+                // Crear link de descarga
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = dataURL;
+                link.click();
+                
+                // Ocultar loader y mostrar mensaje de éxito
+                hideLoader();
+                showStatus(`¡Imagen ${format.toUpperCase()} generada y descargada exitosamente!`, 'success');
+                convertBtn.disabled = false;
+            }
         }
-    }, 100); // Pequeño delay para actualizar el DOM
+        
+        frenteImgElement.onload = checkBothLoaded;
+        dorsoImgElement.onload = checkBothLoaded;
+        frenteImgElement.src = frenteRounded;
+        dorsoImgElement.src = dorsoRounded;
+        
+    } catch (error) {
+        console.error('Error al generar imagen:', error);
+        hideLoader();
+        showStatus('Error al generar la imagen. Inténtalo de nuevo.', 'error');
+        convertBtn.disabled = false;
+    }
 }
 
 // Función para limpiar las imágenes (opcional)

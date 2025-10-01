@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cardify - Convertidor de Carnets a PDF</title>
+    <title>Cardify - Convertidor de Carnets</title>
+    <link rel="icon" type="image/svg+xml" href="icon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
@@ -19,8 +21,11 @@
             border-color: #3182ce;
             background-color: #ebf8ff;
         }
+        .upload-area.has-image {
+            border-color: #10b981;
+            background-color: #ecfdf5;
+        }
         
-        /* Loader styles */
         .loader-overlay {
             position: fixed;
             top: 0;
@@ -56,184 +61,267 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
+        #preview-canvas {
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        #preview-canvas.hidden {
+            display: none !important;
+        }
+        
+        #preview-placeholder {
+            transition: opacity 0.3s ease;
+        }
+        
+        #preview-placeholder.hidden {
+            display: none !important;
+        }
+        
+        .preview-container {
+            position: sticky;
+            top: 20px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            border: none;
+        }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <div class="container mx-auto px-4 py-8">
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
+    <div class="container mx-auto px-3 py-3">
         <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">Cardify</h1>
-            <p class="text-gray-600">Convierte tu carnet a PDF en formato A4</p>
+        <div class="text-center mb-3">
+            <div class="flex items-center justify-center gap-2 mb-1">
+                <img src="icon.svg" alt="Cardify" class="w-10 h-10 drop-shadow-lg">
+                <h1 class="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Cardify</h1>
+            </div>
+            <p class="text-xs text-gray-600">Convierte y personaliza tu carnet profesionalmente</p>
         </div>
 
         <!-- Main Content -->
-        <div class="max-w-4xl mx-auto">
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <!-- Upload Section -->
-                <div class="grid md:grid-cols-2 gap-6 mb-8">
-                    <!-- Frente del Carnet -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-semibold text-gray-700">Frente del Carnet</h3>
-                        <div class="upload-area rounded-lg p-6 text-center cursor-pointer" 
-                             id="frente-upload" 
-                             onclick="document.getElementById('frente-input').click()">
-                            <div id="frente-preview" class="hidden">
-                                <img id="frente-img" class="max-w-full h-48 object-contain mx-auto rounded border" alt="Frente del carnet">
-                                <p class="text-sm text-gray-500 mt-2">Haz clic para cambiar</p>
-                            </div>
-                            <div id="frente-placeholder">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        <div class="max-w-7xl mx-auto">
+            <div class="grid lg:grid-cols-5 gap-3">
+                
+                <!-- Panel Izquierdo: Controles -->
+                <div class="lg:col-span-3">
+                    <div class="bg-white rounded-xl shadow-lg p-4 space-y-3">
+                        
+                        <!-- Upload Section -->
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                 </svg>
-                                <p class="mt-2 text-sm text-gray-600">Haz clic para subir el frente</p>
-                                <p class="text-xs text-gray-400">o arrastra y suelta aquí</p>
+                                Subir Imágenes
+                            </h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <!-- Frente -->
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Frente</label>
+                                    <div class="upload-area rounded-lg p-3 text-center cursor-pointer" 
+                                         id="frente-upload" 
+                                         onclick="document.getElementById('frente-input').click()">
+                                        <div id="frente-preview" class="hidden">
+                                            <img id="frente-img" class="w-full h-24 object-contain rounded" alt="Frente">
+                                            <p class="text-xs text-gray-500 mt-1">✓ Cargado</p>
+                                        </div>
+                                        <div id="frente-placeholder">
+                                            <svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <p class="text-xs text-gray-600 mt-1">Subir</p>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="frente-input" class="hidden" accept="image/*">
+                                </div>
+                                
+                                <!-- Dorso -->
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1">Dorso</label>
+                                    <div class="upload-area rounded-lg p-3 text-center cursor-pointer" 
+                                         id="dorso-upload" 
+                                         onclick="document.getElementById('dorso-input').click()">
+                                        <div id="dorso-preview" class="hidden">
+                                            <img id="dorso-img" class="w-full h-24 object-contain rounded" alt="Dorso">
+                                            <p class="text-xs text-gray-500 mt-1">✓ Cargado</p>
+                                        </div>
+                                        <div id="dorso-placeholder">
+                                            <svg class="mx-auto h-8 w-8 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                                                <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                            </svg>
+                                            <p class="text-xs text-gray-600 mt-1">Subir</p>
+                                        </div>
+                                    </div>
+                                    <input type="file" id="dorso-input" class="hidden" accept="image/*">
+                                </div>
                             </div>
                         </div>
-                        <input type="file" id="frente-input" class="hidden" accept="image/*">
-                    </div>
 
-                    <!-- Dorso del Carnet -->
-                    <div class="space-y-4">
-                        <h3 class="text-lg font-semibold text-gray-700">Dorso del Carnet</h3>
-                        <div class="upload-area rounded-lg p-6 text-center cursor-pointer" 
-                             id="dorso-upload" 
-                             onclick="document.getElementById('dorso-input').click()">
-                            <div id="dorso-preview" class="hidden">
-                                <img id="dorso-img" class="max-w-full h-48 object-contain mx-auto rounded border" alt="Dorso del carnet">
-                                <p class="text-sm text-gray-500 mt-2">Haz clic para cambiar</p>
-                            </div>
-                            <div id="dorso-placeholder">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        <!-- Opciones de Exportación -->
+                        <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
-                                <p class="mt-2 text-sm text-gray-600">Haz clic para subir el dorso</p>
-                                <p class="text-xs text-gray-400">o arrastra y suelta aquí</p>
+                                Opciones de Exportación
+                            </h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <!-- Formato -->
+                                <div class="bg-white p-2 rounded">
+                                    <label class="text-xs font-medium text-gray-700 mb-1 block">Formato</label>
+                                    <div class="space-y-1">
+                                        <label class="flex items-center cursor-pointer text-xs">
+                                            <input type="radio" name="format" value="pdf" checked class="mr-1">
+                                            <span>PDF</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer text-xs">
+                                            <input type="radio" name="format" value="jpg" class="mr-1">
+                                            <span>JPG</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer text-xs">
+                                            <input type="radio" name="format" value="png" class="mr-1">
+                                            <span>PNG</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <!-- Calidad -->
+                                <div class="bg-white p-2 rounded">
+                                    <label class="text-xs font-medium text-gray-700 mb-1 block">Calidad</label>
+                                    <div class="space-y-1">
+                                        <label class="flex items-center cursor-pointer text-xs">
+                                            <input type="radio" name="quality" value="normal" checked class="mr-1">
+                                            <span>Alta</span>
+                                        </label>
+                                        <label class="flex items-center cursor-pointer text-xs">
+                                            <input type="radio" name="quality" value="compressed" class="mr-1">
+                                            <span>Optimizada</span>
+                                        </label>
+                                        <p class="text-xs text-gray-500 mt-1">💡 -80% peso</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <input type="file" id="dorso-input" class="hidden" accept="image/*">
-                    </div>
-                </div>
 
-                <!-- Opciones de Exportación -->
-                <div class="border-t pt-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Opciones de Exportación</h3>
-                    
-                    <div class="grid md:grid-cols-2 gap-6 mb-6">
-                        <!-- Formato de Salida -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <label class="block text-sm font-medium text-gray-700 mb-3">Formato de Salida</label>
-                            <div class="space-y-2">
-                                <label class="flex items-center cursor-pointer">
-                                    <input type="radio" name="format" value="pdf" checked class="mr-2 text-blue-600">
-                                    <span class="text-sm text-gray-700">PDF (Recomendado)</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer">
-                                    <input type="radio" name="format" value="jpg" class="mr-2 text-blue-600">
-                                    <span class="text-sm text-gray-700">JPG (Imagen única)</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer">
-                                    <input type="radio" name="format" value="png" class="mr-2 text-blue-600">
-                                    <span class="text-sm text-gray-700">PNG (Imagen única)</span>
-                                </label>
+                        <!-- Controles de Ajuste -->
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-700 mb-2 flex items-center justify-between">
+                                <span class="flex items-center">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                                    </svg>
+                                    Ajustes de Posición
+                                </span>
+                                <button id="reset-controls-btn" class="text-xs text-blue-600 hover:text-blue-800">
+                                    Resetear
+                                </button>
+                            </h3>
+                            
+                            <!-- Frente -->
+                            <div class="bg-gray-50 p-2 rounded mb-2">
+                                <p class="text-xs font-medium text-gray-600 mb-1">Frente</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="text-xs text-gray-500">Tamaño</label>
+                                        <input type="range" id="frente-scale" min="50" max="150" value="70" class="w-full h-1">
+                                        <span id="frente-scale-value" class="text-xs text-gray-600">70%</span>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Horiz.</label>
+                                        <input type="range" id="frente-x" min="-50" max="50" value="0" class="w-full h-1">
+                                        <span id="frente-x-value" class="text-xs text-gray-600">0mm</span>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Vert.</label>
+                                        <input type="range" id="frente-y" min="-50" max="50" value="20" class="w-full h-1">
+                                        <span id="frente-y-value" class="text-xs text-gray-600">20mm</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Dorso -->
+                            <div class="bg-gray-50 p-2 rounded">
+                                <p class="text-xs font-medium text-gray-600 mb-1">Dorso</p>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div>
+                                        <label class="text-xs text-gray-500">Tamaño</label>
+                                        <input type="range" id="dorso-scale" min="50" max="150" value="70" class="w-full h-1">
+                                        <span id="dorso-scale-value" class="text-xs text-gray-600">70%</span>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Horiz.</label>
+                                        <input type="range" id="dorso-x" min="-50" max="50" value="0" class="w-full h-1">
+                                        <span id="dorso-x-value" class="text-xs text-gray-600">0mm</span>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500">Vert.</label>
+                                        <input type="range" id="dorso-y" min="-50" max="50" value="-20" class="w-full h-1">
+                                        <span id="dorso-y-value" class="text-xs text-gray-600">-20mm</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Calidad de Salida -->
-                        <div class="bg-gray-50 p-4 rounded-lg">
-                            <label class="block text-sm font-medium text-gray-700 mb-3">Calidad y Compresión</label>
-                            <div class="space-y-2">
-                                <label class="flex items-center cursor-pointer">
-                                    <input type="radio" name="quality" value="normal" checked class="mr-2 text-blue-600">
-                                    <span class="text-sm text-gray-700">Alta calidad sin comprimir</span>
-                                </label>
-                                <label class="flex items-center cursor-pointer">
-                                    <input type="radio" name="quality" value="compressed" class="mr-2 text-blue-600">
-                                    <span class="text-sm text-gray-700">Optimizado (menor peso)</span>
-                                </label>
-                            </div>
-                            <p class="text-xs text-gray-500 mt-2">💡 Optimizado reduce hasta 80% el tamaño manteniendo buena calidad</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Controles de Ajuste -->
-                <div class="border-t pt-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Ajustar Posición y Tamaño</h3>
-                    
-                    <!-- Controles para Frente -->
-                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                        <h4 class="font-medium text-gray-700 mb-3">Frente del Carnet</h4>
-                        <div class="grid md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm text-gray-600 mb-2">Tamaño (%)</label>
-                                <input type="range" id="frente-scale" min="50" max="150" value="70" 
-                                       class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
-                                <span id="frente-scale-value" class="text-xs text-gray-500">70%</span>
-                            </div>
-                            <div>
-                                <label class="block text-sm text-gray-600 mb-2">Posición Horizontal</label>
-                                <input type="range" id="frente-x" min="-50" max="50" value="0" 
-                                       class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
-                                <span id="frente-x-value" class="text-xs text-gray-500">0mm</span>
-                            </div>
-                            <div>
-                                <label class="block text-sm text-gray-600 mb-2">Posición Vertical</label>
-                                <input type="range" id="frente-y" min="-50" max="50" value="20" 
-                                       class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
-                                <span id="frente-y-value" class="text-xs text-gray-500">20mm</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Controles para Dorso -->
-                    <div class="bg-gray-50 p-4 rounded-lg mb-4">
-                        <h4 class="font-medium text-gray-700 mb-3">Dorso del Carnet</h4>
-                        <div class="grid md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm text-gray-600 mb-2">Tamaño (%)</label>
-                                <input type="range" id="dorso-scale" min="50" max="150" value="70" 
-                                       class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
-                                <span id="dorso-scale-value" class="text-xs text-gray-500">70%</span>
-                            </div>
-                            <div>
-                                <label class="block text-sm text-gray-600 mb-2">Posición Horizontal</label>
-                                <input type="range" id="dorso-x" min="-50" max="50" value="0" 
-                                       class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
-                                <span id="dorso-x-value" class="text-xs text-gray-500">0mm</span>
-                            </div>
-                            <div>
-                                <label class="block text-sm text-gray-600 mb-2">Posición Vertical</label>
-                                <input type="range" id="dorso-y" min="-50" max="50" value="-20" 
-                                       class="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer">
-                                <span id="dorso-y-value" class="text-xs text-gray-500">-20mm</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Botón de Reiniciar -->
-                    <div class="text-center mb-4">
-                        <button id="reset-controls-btn" 
-                                class="text-sm text-gray-600 hover:text-gray-800 underline">
-                            Restablecer valores por defecto
+                        <!-- Convert Button -->
+                        <button id="convert-btn" 
+                                class="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition duration-200 flex items-center justify-center shadow-lg"
+                                disabled>
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span id="btn-text">Generar y Descargar</span>
                         </button>
+
+                        <!-- Status Message -->
+                        <div id="status-message" class="text-center hidden">
+                            <p id="status-text" class="text-sm"></p>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Convert Button -->
-                <div class="text-center">
-                    <button id="convert-btn" 
-                            class="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-8 rounded-lg transition duration-200 flex items-center mx-auto"
-                            disabled>
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                        </svg>
-                        <span id="btn-text">Generar y Descargar</span>
-                    </button>
-                </div>
-
-                <!-- Status Message -->
-                <div id="status-message" class="mt-4 text-center hidden">
-                    <p id="status-text" class="text-sm"></p>
+                <!-- Panel Derecho: Previsualización -->
+                <div class="lg:col-span-2">
+                    <div class="preview-container">
+                        <div class="bg-white rounded-xl shadow-lg p-4">
+                            <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                Vista Previa
+                            </h3>
+                            <div class="bg-gray-100 rounded-lg p-3 flex items-center justify-center min-h-[400px]" style="aspect-ratio: 210/297;">
+                                <canvas id="preview-canvas" class="max-w-full max-h-full rounded bg-white hidden"></canvas>
+                                <div id="preview-placeholder" class="text-center">
+                                    <svg class="mx-auto h-16 w-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                    </svg>
+                                    <p class="text-sm text-gray-400 mt-2">Sube las imágenes para<br>ver la vista previa</p>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 text-center mt-2">
+                                La previsualización se actualiza en tiempo real
+                            </p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

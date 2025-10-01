@@ -60,55 +60,103 @@ function setupEventListeners() {
 }
 
 function setupControlListeners() {
-    // Frente
+    // Referencias a los inputs de número
+    const frenteScaleInput = document.getElementById('frente-scale-input');
+    const frenteXInput = document.getElementById('frente-x-input');
+    const frenteYInput = document.getElementById('frente-y-input');
+    const dorsoScaleInput = document.getElementById('dorso-scale-input');
+    const dorsoXInput = document.getElementById('dorso-x-input');
+    const dorsoYInput = document.getElementById('dorso-y-input');
+    
+    // Frente - Slider actualiza input
     frenteScale.addEventListener('input', (e) => {
-        document.getElementById('frente-scale-value').textContent = e.target.value + '%';
+        frenteScaleInput.value = e.target.value;
         updatePreview();
     });
     
     frenteX.addEventListener('input', (e) => {
-        document.getElementById('frente-x-value').textContent = e.target.value + 'mm';
+        frenteXInput.value = e.target.value;
         updatePreview();
     });
     
     frenteY.addEventListener('input', (e) => {
-        document.getElementById('frente-y-value').textContent = e.target.value + 'mm';
+        frenteYInput.value = e.target.value;
         updatePreview();
     });
     
-    // Dorso
+    // Frente - Input actualiza slider
+    frenteScaleInput.addEventListener('input', (e) => {
+        frenteScale.value = e.target.value;
+        updatePreview();
+    });
+    
+    frenteXInput.addEventListener('input', (e) => {
+        frenteX.value = e.target.value;
+        updatePreview();
+    });
+    
+    frenteYInput.addEventListener('input', (e) => {
+        frenteY.value = e.target.value;
+        updatePreview();
+    });
+    
+    // Dorso - Slider actualiza input
     dorsoScale.addEventListener('input', (e) => {
-        document.getElementById('dorso-scale-value').textContent = e.target.value + '%';
+        dorsoScaleInput.value = e.target.value;
         updatePreview();
     });
     
     dorsoX.addEventListener('input', (e) => {
-        document.getElementById('dorso-x-value').textContent = e.target.value + 'mm';
+        dorsoXInput.value = e.target.value;
         updatePreview();
     });
     
     dorsoY.addEventListener('input', (e) => {
-        document.getElementById('dorso-y-value').textContent = e.target.value + 'mm';
+        dorsoYInput.value = e.target.value;
+        updatePreview();
+    });
+    
+    // Dorso - Input actualiza slider
+    dorsoScaleInput.addEventListener('input', (e) => {
+        dorsoScale.value = e.target.value;
+        updatePreview();
+    });
+    
+    dorsoXInput.addEventListener('input', (e) => {
+        dorsoX.value = e.target.value;
+        updatePreview();
+    });
+    
+    dorsoYInput.addEventListener('input', (e) => {
+        dorsoY.value = e.target.value;
         updatePreview();
     });
 }
 
 function resetControls() {
+    // Referencias a los inputs de número
+    const frenteScaleInput = document.getElementById('frente-scale-input');
+    const frenteXInput = document.getElementById('frente-x-input');
+    const frenteYInput = document.getElementById('frente-y-input');
+    const dorsoScaleInput = document.getElementById('dorso-scale-input');
+    const dorsoXInput = document.getElementById('dorso-x-input');
+    const dorsoYInput = document.getElementById('dorso-y-input');
+    
     // Reiniciar valores a los valores por defecto
     frenteScale.value = 70;
     frenteX.value = 0;
-    frenteY.value = 20;
+    frenteY.value = 45;
     dorsoScale.value = 70;
     dorsoX.value = 0;
-    dorsoY.value = -20;
+    dorsoY.value = 5;
     
-    // Actualizar displays
-    document.getElementById('frente-scale-value').textContent = '70%';
-    document.getElementById('frente-x-value').textContent = '0mm';
-    document.getElementById('frente-y-value').textContent = '20mm';
-    document.getElementById('dorso-scale-value').textContent = '70%';
-    document.getElementById('dorso-x-value').textContent = '0mm';
-    document.getElementById('dorso-y-value').textContent = '-20mm';
+    // Actualizar inputs de número
+    frenteScaleInput.value = 70;
+    frenteXInput.value = 0;
+    frenteYInput.value = 45;
+    dorsoScaleInput.value = 70;
+    dorsoXInput.value = 0;
+    dorsoYInput.value = 5;
     
     // Actualizar preview
     updatePreview();
